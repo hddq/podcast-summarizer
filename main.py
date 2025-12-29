@@ -1,44 +1,14 @@
-import os
-import requests
-from dotenv import load_dotenv
 from datetime import datetime
-
-load_dotenv()
-
-BASE_URL = os.getenv("GPODDER_BASE_URL").rstrip("/")
-USERNAME = os.getenv("GPODDER_USERNAME")
-PASSWORD = os.getenv("GPODDER_PASSWORD")
-SINCE = int(os.getenv("SINCE_TIMESTAMP", "0"))
-
-AUTH = (USERNAME, PASSWORD)
-
-def parse_timestamp(ts):
-    if ts is None:
-        return None
-
-    # UNIX timestamp (int or numeric string)
-    if isinstance(ts, (int, float)) or (isinstance(ts, str) and ts.isdigit()):
-        return datetime.fromtimestamp(int(ts))
-
-    # ISO 8601 string
-    if isinstance(ts, str):
-        try:
-            return datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        except ValueError:
-            return None
-
-    return None
-
-def fetch_episode_actions():
-    url = f"{BASE_URL}/api/2/episodes/{USERNAME}.json"
-    params = {"since": SINCE}
-
-    r = requests.get(url, auth=AUTH, params=params, timeout=30)
-    r.raise_for_status()
-    return r.json()
+from gpodder import fetch_episode_actions
+from utils import parse_timestamp
+from downloader import download_file
 
 def main():
-    data = fetch_episode_actions()
+    try:
+        data = fetch_episode_actions()
+    except Exception as e:
+        print(f"Failed to fetch actions: {e}")
+        return
 
     actions = data.get("actions", [])
     plays = [a for a in actions if a.get("action") == "play"]
@@ -51,12 +21,19 @@ def main():
     for a in plays:
         dt = parse_timestamp(a.get("timestamp"))
         time_str = dt.isoformat() if dt else "unknown"
+        episode_url = a.get('episode')
+        podcast_url = a.get('podcast')
 
         print("─" * 80)
         print(f"🕒 {time_str}")
-        print(f"📡 Podcast: {a.get('podcast')}")
-        print(f"🎙 Episode: {a.get('episode')}")
+        print(f"📡 Podcast: {podcast_url}")
+        print(f"🎙 Episode: {episode_url}")
         print(f"▶️  Position: {a.get('position')} / {a.get('total')}")
+
+        if episode_url:
+             download_file(episode_url)
+        else:
+             print("⚠️ No episode URL found, skipping download.")
 
 if __name__ == "__main__":
     main()
