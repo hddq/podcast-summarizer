@@ -1,30 +1,96 @@
 import os
+import yaml
 from dotenv import load_dotenv
 
+# Load environment variables (secrets only)
 load_dotenv()
 
-GPODDER_BASE_URL = os.getenv("GPODDER_BASE_URL", "").rstrip("/")
+def load_yaml_config():
+    """
+    Loads configuration from config.yaml.
+    Looks in current directory and /app/config/ (common for Docker/K8s).
+    """
+    candidates = [
+        "config.local.yaml", # Local override (usually ignored by git)
+        "config.yaml",       # Default project config
+        "/app/config/config.yaml" # Docker/K8s volume mount
+    ]
+    
+    for path in candidates:
+        if os.path.exists(path):
+            try:
+                with open(path, 'r') as f:
+                    return yaml.safe_load(f) or {}
+            except Exception as e:
+                print(f"Warning: Failed to load config from {path}: {e}")
+    
+    print("Warning: No config.yaml found. Using defaults only.")
+    return {}
+
+_yaml_conf = load_yaml_config()
+
+def get_config(key_path, default=None):
+    """
+    Retrieves a configuration value from the loaded YAML configuration.
+    
+    Args:
+        key_path (str): Dot-notation path to the key (e.g. "section.subsection.key")
+        default: Value to return if key is not found
+    """
+    keys = key_path.split('.')
+    value = _yaml_conf
+    try:
+        for k in keys:
+            if isinstance(value, dict) and k in value:
+                value = value[k]
+            else:
+                value = None
+                break
+    except Exception:
+        value = None
+        
+    if value is not None:
+        return value
+
+    return default
+
+# --- Secrets (From Environment Only) ---
 GPODDER_USERNAME = os.getenv("GPODDER_USERNAME")
 GPODDER_PASSWORD = os.getenv("GPODDER_PASSWORD")
-SINCE_TIMESTAMP = int(os.getenv("SINCE_TIMESTAMP", "0"))
-DOWNLOAD_DIR = "data/downloads"
-TRANSCRIPT_DIR = "data/transcripts"
-SUMMARY_DIR = "data/summaries"
-PROMPT_FILE = "prompt.md"
-MODELS_DIR = "data/models"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# LLM Configuration
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").lower() # gemini or ollama
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
-
-# Whisper settings
-WHISPER_ROOT = "/app/whisper.cpp"
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
-# The expected path for the model file
-WHISPER_MODEL_PATH = os.path.join(MODELS_DIR, f"ggml-{WHISPER_MODEL}.bin")
-WHISPER_BIN = os.getenv("WHISPER_BIN", os.path.join(WHISPER_ROOT, "build/bin/whisper-cli"))
-
 AUTH = (GPODDER_USERNAME, GPODDER_PASSWORD)
+
+# --- Configuration (From YAML Only) ---
+
+# gPodder
+GPODDER_BASE_URL = get_config("gpodder.base_url", "").rstrip("/")
+SINCE_TIMESTAMP = int(get_config("gpodder.since_timestamp", 0))
+
+# Paths
+DOWNLOAD_DIR = get_config("paths.downloads", "data/downloads")
+TRANSCRIPT_DIR = get_config("paths.transcripts", "data/transcripts")
+SUMMARY_DIR = get_config("paths.summaries", "data/summaries")
+MODELS_DIR = get_config("paths.models", "data/models")
+STATE_FILE = get_config("paths.state_file", "data/state.json")
+PROMPT_FILE = get_config("paths.prompt_file", "prompt.md")
+
+# LLM Configuration
+LLM_PROVIDER = get_config("llm.provider", "gemini").lower()
+GEMINI_MODEL = get_config("llm.gemini.model", "gemini-3-flash-preview")
+OLLAMA_BASE_URL = get_config("llm.ollama.base_url", "http://localhost:11434")
+OLLAMA_MODEL = get_config("llm.ollama.model", "llama3")
+
+# Whisper Configuration
+WHISPER_ROOT = get_config("whisper.root", "/app/whisper.cpp")
+WHISPER_MODEL = get_config("whisper.model", "base")
+
+# Derived Whisper Paths
+WHISPER_MODEL_PATH = os.path.join(MODELS_DIR, f"ggml-{WHISPER_MODEL}.bin")
+
+_whisper_bin_conf = get_config("whisper.bin_path")
+if _whisper_bin_conf:
+    WHISPER_BIN = _whisper_bin_conf
+else:
+    # Default to standard build path inside WHISPER_ROOT
+    WHISPER_BIN = os.path.join(WHISPER_ROOT, "build/bin/whisper-cli")

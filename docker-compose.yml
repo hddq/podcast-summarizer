@@ -4,6 +4,8 @@ services:
     image: podcast-summarizer_podcast-summarizer
     volumes:
       - ./data:/app/data:z
+      - ./config.yaml:/app/config.yaml:z,ro
+      - ./prompt.md:/app/prompt.md:z,ro
     env_file:
       - .env
     environment:

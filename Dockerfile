@@ -5,9 +5,6 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Install system dependencies
-# git, make, g++: for building whisper.cpp
-# ffmpeg: for audio conversion
-# curl: for downloading models (optional, but useful)
 RUN apt-get update && apt-get install -y \
     git \
     make \
