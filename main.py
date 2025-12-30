@@ -2,11 +2,12 @@ import time
 import sys
 from datetime import datetime
 from gpodder import fetch_episode_actions
-from utils import parse_timestamp
+from utils import parse_timestamp, get_podcast_metadata, sanitize_filename
 from downloader import download_file
 from transcriber import transcribe
 from summarizer import summarize
 from state_manager import load_last_timestamp, save_last_timestamp
+import os
 
 POLL_INTERVAL = 600  # 10 minutes
 
@@ -55,7 +56,27 @@ def process_actions(since_ts):
                  max_ts = ts_val
 
         if episode_url:
-             filepath = download_file(episode_url)
+             # Fetch metadata to determine structure
+             podcast_title, episode_title = get_podcast_metadata(podcast_url, episode_url)
+             
+             if not podcast_title:
+                 podcast_title = "Unknown Podcast"
+             if not episode_title:
+                 # fallback to extracting from URL
+                 episode_title = episode_url.split("/")[-1]
+                 if "?" in episode_title:
+                     episode_title = episode_title.split("?")[0]
+            
+             safe_podcast = sanitize_filename(podcast_title)
+             safe_episode = sanitize_filename(episode_title)
+             
+             # Ensure extension
+             if not safe_episode.lower().endswith('.mp3') and not safe_episode.lower().endswith('.m4a'):
+                  safe_episode += ".mp3" # default guess
+
+             relative_path = os.path.join(safe_podcast, safe_episode)
+             
+             filepath = download_file(episode_url, relative_path=relative_path)
              if filepath:
                  transcript_path = transcribe(filepath)
                  if transcript_path:

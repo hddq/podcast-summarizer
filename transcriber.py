@@ -2,7 +2,7 @@ import os
 import subprocess
 import requests
 import shutil
-from config import WHISPER_ROOT, WHISPER_MODEL, WHISPER_MODEL_PATH, TRANSCRIPT_DIR, WHISPER_BIN
+from config import WHISPER_ROOT, WHISPER_MODEL, WHISPER_MODEL_PATH, TRANSCRIPT_DIR, WHISPER_BIN, DOWNLOAD_DIR
 
 def download_model_if_needed():
     """
@@ -69,18 +69,28 @@ def transcribe(audio_path):
         print(f"File not found: {audio_path}")
         return
 
-    # Check if transcript already exists
-    filename = os.path.basename(audio_path)
-    output_base = os.path.join(TRANSCRIPT_DIR, filename)
+    # Determine relative path to maintain structure
+    try:
+        # Use abs path for safer relative calculation
+        abs_audio = os.path.abspath(audio_path)
+        abs_download = os.path.abspath(DOWNLOAD_DIR)
+        if abs_audio.startswith(abs_download):
+             rel_path = os.path.relpath(abs_audio, start=abs_download)
+        else:
+             rel_path = os.path.basename(audio_path)
+    except Exception:
+        rel_path = os.path.basename(audio_path)
+
+    output_base = os.path.join(TRANSCRIPT_DIR, rel_path)
+    
+    # Ensure output dir
+    os.makedirs(os.path.dirname(output_base), exist_ok=True)
+
     expected_output = output_base + ".txt"
 
     if os.path.exists(expected_output):
         print(f"Transcript already exists: {expected_output}")
         return expected_output
-
-    # Ensure output dir
-    if not os.path.exists(TRANSCRIPT_DIR):
-        os.makedirs(TRANSCRIPT_DIR)
 
     # 1. Prepare Model
     download_model_if_needed()
@@ -92,10 +102,7 @@ def transcribe(audio_path):
         return None
 
     # 3. Run Whisper
-    # Output file base name (whisper.cpp adds .txt, .vtt etc)
-    # We want the output in TRANSCRIPT_DIR
-    
-    print(f"Transcribing {filename}...")
+    print(f"Transcribing {rel_path}...")
     
     # whisper.cpp executable path
     executable = WHISPER_BIN
@@ -106,12 +113,12 @@ def transcribe(audio_path):
         "-f", wav_path,
         "-l", "auto",      # auto-detect language
         "-otxt",           # output text file
-        "-of", output_base # output file prefix (will create output_base.txt)
+        "-of", output_base # output file prefix
     ]
     
     try:
         subprocess.run(cmd, check=True)
-        print(f"Transcription complete: {output_base}.txt")
+        print(f"Transcription complete: {expected_output}")
         return expected_output
     except subprocess.CalledProcessError as e:
         print(f"Whisper failed: {e}")
