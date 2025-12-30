@@ -7,6 +7,7 @@ from downloader import download_file
 from transcriber import transcribe
 from summarizer import summarize
 from state_manager import load_last_timestamp, save_last_timestamp
+from version import __version__
 import os
 
 POLL_INTERVAL = 600  # 10 minutes
@@ -87,7 +88,7 @@ def process_actions(since_ts):
     return max_ts
 
 def main():
-    print("🚀 Starting PodGist Loop...")
+    print(f"🚀 Starting PodGist v{__version__} Loop...")
     current_since = load_last_timestamp()
     print(f"📅 Starting check from timestamp: {current_since}")
 
