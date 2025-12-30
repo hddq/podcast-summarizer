@@ -108,6 +108,7 @@ def transcribe(audio_path):
         executable,
         "-m", WHISPER_MODEL_PATH,
         "-f", wav_path,
+        "-l", "auto",      # auto-detect language
         "-otxt",           # output text file
         "-of", output_base # output file prefix (will create output_base.txt)
     ]
