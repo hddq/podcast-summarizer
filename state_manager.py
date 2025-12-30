@@ -2,7 +2,7 @@ import json
 import os
 from config import SINCE_TIMESTAMP
 
-STATE_FILE = "state.json"
+STATE_FILE = "data/state.json"
 
 def load_last_timestamp():
     """

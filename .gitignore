@@ -1,8 +1,4 @@
 venv
 .env
-downloads/
+data/
 __pycache__/
-transcripts/
-models/
-summaries
-state.json

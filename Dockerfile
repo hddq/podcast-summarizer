@@ -35,7 +35,7 @@ COPY . .
 
 # Create directories for data persistence
 # models: to store ggml models
-RUN mkdir -p downloads transcripts models
+RUN mkdir -p data/downloads data/transcripts data/models data/summaries
 
 # Run the application
 CMD ["python", "main.py"]

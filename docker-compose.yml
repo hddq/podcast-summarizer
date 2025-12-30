@@ -3,11 +3,7 @@ services:
     build: .
     image: podcast-summarizer_podcast-summarizer
     volumes:
-      - ./downloads:/app/downloads:z
-      - ./transcripts:/app/transcripts:z
-      - ./models:/app/models:z
-      - ./summaries:/app/summaries:z
-      - ./state.json:/app/state.json:z
+      - ./data:/app/data:z
     env_file:
       - .env
     environment:

@@ -7,11 +7,11 @@ GPODDER_BASE_URL = os.getenv("GPODDER_BASE_URL", "").rstrip("/")
 GPODDER_USERNAME = os.getenv("GPODDER_USERNAME")
 GPODDER_PASSWORD = os.getenv("GPODDER_PASSWORD")
 SINCE_TIMESTAMP = int(os.getenv("SINCE_TIMESTAMP", "0"))
-DOWNLOAD_DIR = "downloads"
-TRANSCRIPT_DIR = "transcripts"
-SUMMARY_DIR = "summaries"
+DOWNLOAD_DIR = "data/downloads"
+TRANSCRIPT_DIR = "data/transcripts"
+SUMMARY_DIR = "data/summaries"
 PROMPT_FILE = "prompt.md"
-MODELS_DIR = "models"
+MODELS_DIR = "data/models"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Whisper settings
