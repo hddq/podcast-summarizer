@@ -1,10 +1,63 @@
 import os
+import requests
+import json
 from google import genai
-from config import GEMINI_API_KEY, SUMMARY_DIR, PROMPT_FILE, TRANSCRIPT_DIR
+from config import (
+    GEMINI_API_KEY, 
+    SUMMARY_DIR, 
+    PROMPT_FILE, 
+    TRANSCRIPT_DIR,
+    LLM_PROVIDER,
+    GEMINI_MODEL,
+    OLLAMA_BASE_URL,
+    OLLAMA_MODEL
+)
+
+def summarize_with_gemini(prompt):
+    """
+    Summarizes the prompt using Google Gemini.
+    """
+    if not GEMINI_API_KEY:
+        print("GEMINI_API_KEY is not set.")
+        return None
+
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model=GEMINI_MODEL, 
+            contents=prompt
+        )
+        return response.text
+    except Exception as e:
+        print(f"Gemini summarization failed: {e}")
+        return None
+
+def summarize_with_ollama(prompt):
+    """
+    Summarizes the prompt using Ollama.
+    """
+    url = f"{OLLAMA_BASE_URL.rstrip('/')}/api/generate"
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False
+    }
+    
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("response")
+    except requests.exceptions.ConnectionError:
+        print(f"Failed to connect to Ollama at {url}. Is Ollama running?")
+        return None
+    except Exception as e:
+        print(f"Ollama summarization failed: {e}")
+        return None
 
 def summarize(transcript_path):
     """
-    Summarizes the given transcript file using Gemini.
+    Summarizes the given transcript file using the configured LLM provider.
     """
     if not transcript_path or not os.path.exists(transcript_path):
         print(f"Transcript not found: {transcript_path}")
@@ -58,25 +111,23 @@ def summarize(transcript_path):
     # Construct prompt
     prompt = prompt_template.replace("{transcript}", transcript_text)
 
-    # Call Gemini
-    if not GEMINI_API_KEY:
-        print("GEMINI_API_KEY is not set.")
+    print(f"Summarizing {os.path.basename(transcript_path)} using {LLM_PROVIDER}...")
+
+    summary_text = None
+    if LLM_PROVIDER == "gemini":
+        summary_text = summarize_with_gemini(prompt)
+    elif LLM_PROVIDER == "ollama":
+        summary_text = summarize_with_ollama(prompt)
+    else:
+        print(f"Unknown LLM_PROVIDER: {LLM_PROVIDER}")
         return
 
-    try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        print(f"Summarizing {os.path.basename(transcript_path)}...")
-        response = client.models.generate_content(
-            model='gemini-3-flash-preview', 
-            contents=prompt
-        )
-        
-        summary_text = response.text
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(summary_text)
-        
-        print(f"Summary saved to {output_path}")
-
-    except Exception as e:
-        print(f"Summarization failed: {e}")
+    if summary_text:
+        try:
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(summary_text)
+            print(f"Summary saved to {output_path}")
+        except Exception as e:
+            print(f"Error saving summary: {e}")
+    else:
+        print("Failed to generate summary.")
