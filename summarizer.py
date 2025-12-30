@@ -1,5 +1,5 @@
 import os
-import google.generativeai as genai
+from google import genai
 from config import GEMINI_API_KEY, SUMMARY_DIR, PROMPT_FILE
 
 def summarize(transcript_path):
@@ -58,10 +58,12 @@ def summarize(transcript_path):
         return
 
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-3-flash-preview')
+        client = genai.Client(api_key=GEMINI_API_KEY)
         print(f"Summarizing {filename}...")
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-3-flash-preview', 
+            contents=prompt
+        )
         
         summary_text = response.text
 
