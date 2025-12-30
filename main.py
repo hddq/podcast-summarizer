@@ -87,7 +87,7 @@ def process_actions(since_ts):
     return max_ts
 
 def main():
-    print("🚀 Starting Podcast Summarizer Loop...")
+    print("🚀 Starting PodGist Loop...")
     current_since = load_last_timestamp()
     print(f"📅 Starting check from timestamp: {current_since}")
 
