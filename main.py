@@ -2,6 +2,7 @@ from datetime import datetime
 from gpodder import fetch_episode_actions
 from utils import parse_timestamp
 from downloader import download_file
+from transcriber import transcribe
 
 def main():
     try:
@@ -31,7 +32,9 @@ def main():
         print(f"▶️  Position: {a.get('position')} / {a.get('total')}")
 
         if episode_url:
-             download_file(episode_url)
+             filepath = download_file(episode_url)
+             if filepath:
+                 transcribe(filepath)
         else:
              print("⚠️ No episode URL found, skipping download.")
 

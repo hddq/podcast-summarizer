@@ -1,0 +1,12 @@
+services:
+  podcast-summarizer:
+    build: .
+    image: podcast-summarizer_podcast-summarizer
+    volumes:
+      - ./downloads:/app/downloads:z
+      - ./transcripts:/app/transcripts:z
+      - ./models:/app/models:z
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1

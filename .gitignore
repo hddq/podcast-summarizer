@@ -2,3 +2,5 @@ venv
 .env
 downloads/
 __pycache__/
+transcripts/
+models/

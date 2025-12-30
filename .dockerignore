@@ -1,0 +1,8 @@
+__pycache__
+venv
+.git
+.env
+downloads
+transcripts
+models
+*.pyc
