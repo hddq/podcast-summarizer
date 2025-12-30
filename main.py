@@ -3,6 +3,7 @@ from gpodder import fetch_episode_actions
 from utils import parse_timestamp
 from downloader import download_file
 from transcriber import transcribe
+from summarizer import summarize
 
 def main():
     try:
@@ -34,7 +35,9 @@ def main():
         if episode_url:
              filepath = download_file(episode_url)
              if filepath:
-                 transcribe(filepath)
+                 transcript_path = transcribe(filepath)
+                 if transcript_path:
+                     summarize(transcript_path)
         else:
              print("⚠️ No episode URL found, skipping download.")
 

@@ -76,7 +76,7 @@ def transcribe(audio_path):
 
     if os.path.exists(expected_output):
         print(f"Transcript already exists: {expected_output}")
-        return
+        return expected_output
 
     # Ensure output dir
     if not os.path.exists(TRANSCRIPT_DIR):
@@ -89,7 +89,7 @@ def transcribe(audio_path):
     print(f"Converting {audio_path} to 16kHz WAV...")
     wav_path, created_temp = convert_to_wav_16k(audio_path)
     if not wav_path:
-        return
+        return None
 
     # 3. Run Whisper
     # Output file base name (whisper.cpp adds .txt, .vtt etc)
@@ -112,8 +112,10 @@ def transcribe(audio_path):
     try:
         subprocess.run(cmd, check=True)
         print(f"Transcription complete: {output_base}.txt")
+        return expected_output
     except subprocess.CalledProcessError as e:
         print(f"Whisper failed: {e}")
+        return None
     finally:
         # Cleanup temporary wav file ONLY if we created it
         if created_temp and os.path.exists(wav_path):
