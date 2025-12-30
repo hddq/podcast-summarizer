@@ -35,12 +35,13 @@ def download_model_if_needed():
 def convert_to_wav_16k(input_path):
     """
     Converts input audio to 16kHz WAV using ffmpeg.
-    Returns the path to the temporary wav file.
+    Returns a tuple (path to the wav file, boolean indicating if it was newly created).
     """
     output_path = input_path + ".wav"
     
-    # If the wav already exists, we might want to skip, but for now let's overwrite to be safe
-    # or check if it exists.
+    if os.path.exists(output_path):
+        print(f"WAV file already exists, skipping conversion: {output_path}")
+        return output_path, False
     
     cmd = [
         "ffmpeg",
@@ -55,10 +56,10 @@ def convert_to_wav_16k(input_path):
     # Run ffmpeg silently
     try:
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return output_path
+        return output_path, True
     except subprocess.CalledProcessError as e:
         print(f"FFmpeg conversion failed: {e}")
-        return None
+        return None, False
 
 def transcribe(audio_path):
     """
@@ -77,7 +78,7 @@ def transcribe(audio_path):
 
     # 2. Convert Audio
     print(f"Converting {audio_path} to 16kHz WAV...")
-    wav_path = convert_to_wav_16k(audio_path)
+    wav_path, created_temp = convert_to_wav_16k(audio_path)
     if not wav_path:
         return
 
@@ -90,6 +91,12 @@ def transcribe(audio_path):
 
     if os.path.exists(expected_output):
         print(f"Transcript already exists: {expected_output}")
+        # If we didn't do any work, we might still want to cleanup if we created the wav,
+        # but logically if we skip transcription, maybe we shouldn't have converted?
+        # But we check transcript existence AFTER conversion in the original code.
+        # Let's keep the flow but respect created_temp cleanup.
+        if created_temp and os.path.exists(wav_path):
+            os.remove(wav_path)
         return
 
     print(f"Transcribing {filename}...")
@@ -111,6 +118,6 @@ def transcribe(audio_path):
     except subprocess.CalledProcessError as e:
         print(f"Whisper failed: {e}")
     finally:
-        # Cleanup temporary wav file
-        if os.path.exists(wav_path):
+        # Cleanup temporary wav file ONLY if we created it
+        if created_temp and os.path.exists(wav_path):
             os.remove(wav_path)
