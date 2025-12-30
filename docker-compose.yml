@@ -7,6 +7,7 @@ services:
       - ./transcripts:/app/transcripts:z
       - ./models:/app/models:z
       - ./summaries:/app/summaries:z
+      - ./state.json:/app/state.json:z
     env_file:
       - .env
     environment:
