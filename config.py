@@ -19,5 +19,6 @@ WHISPER_ROOT = "/app/whisper.cpp"
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
 # The expected path for the model file
 WHISPER_MODEL_PATH = os.path.join(MODELS_DIR, f"ggml-{WHISPER_MODEL}.bin")
+WHISPER_BIN = os.getenv("WHISPER_BIN", os.path.join(WHISPER_ROOT, "build/bin/whisper-cli"))
 
 AUTH = (GPODDER_USERNAME, GPODDER_PASSWORD)

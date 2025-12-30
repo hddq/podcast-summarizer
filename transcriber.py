@@ -2,7 +2,7 @@ import os
 import subprocess
 import requests
 import shutil
-from config import WHISPER_ROOT, WHISPER_MODEL, WHISPER_MODEL_PATH, TRANSCRIPT_DIR
+from config import WHISPER_ROOT, WHISPER_MODEL, WHISPER_MODEL_PATH, TRANSCRIPT_DIR, WHISPER_BIN
 
 def download_model_if_needed():
     """
@@ -98,7 +98,7 @@ def transcribe(audio_path):
     print(f"Transcribing {filename}...")
     
     # whisper.cpp executable path
-    executable = os.path.join(WHISPER_ROOT, "build/bin/whisper-cli")
+    executable = WHISPER_BIN
     
     cmd = [
         executable,
