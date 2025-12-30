@@ -69,6 +69,15 @@ def transcribe(audio_path):
         print(f"File not found: {audio_path}")
         return
 
+    # Check if transcript already exists
+    filename = os.path.basename(audio_path)
+    output_base = os.path.join(TRANSCRIPT_DIR, filename)
+    expected_output = output_base + ".txt"
+
+    if os.path.exists(expected_output):
+        print(f"Transcript already exists: {expected_output}")
+        return
+
     # Ensure output dir
     if not os.path.exists(TRANSCRIPT_DIR):
         os.makedirs(TRANSCRIPT_DIR)
@@ -85,20 +94,7 @@ def transcribe(audio_path):
     # 3. Run Whisper
     # Output file base name (whisper.cpp adds .txt, .vtt etc)
     # We want the output in TRANSCRIPT_DIR
-    filename = os.path.basename(audio_path)
-    output_base = os.path.join(TRANSCRIPT_DIR, filename)
-    expected_output = output_base + ".txt"
-
-    if os.path.exists(expected_output):
-        print(f"Transcript already exists: {expected_output}")
-        # If we didn't do any work, we might still want to cleanup if we created the wav,
-        # but logically if we skip transcription, maybe we shouldn't have converted?
-        # But we check transcript existence AFTER conversion in the original code.
-        # Let's keep the flow but respect created_temp cleanup.
-        if created_temp and os.path.exists(wav_path):
-            os.remove(wav_path)
-        return
-
+    
     print(f"Transcribing {filename}...")
     
     # whisper.cpp executable path
